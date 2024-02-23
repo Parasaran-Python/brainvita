@@ -13,15 +13,10 @@ class GameBoard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if ([0, 1, 5, 6].contains(i)) ...{
-                for (int j = 0; j < 3; j++) ...{
-                  GameCell()
-                }
-              }
-              else ...{
-                for (int j = 0; j < 7; j++) ...{
-                  GameCell()
-                }
+              for (int j = 0;
+                  j < ([0, 1, 5, 6].contains(i) ? 3 : 7);
+                  j++) ...{
+                GameCell()
               }
             ]
           )
