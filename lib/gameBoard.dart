@@ -16,7 +16,9 @@ class GameBoard extends StatelessWidget {
               for (int j = 0;
                   j < ([0, 1, 5, 6].contains(i) ? 3 : 7);
                   j++) ...{
-                GameCell()
+                GameCell(
+                  value: (i == 3 && j == 3) ? false : true,
+                )
               }
             ]
           )
