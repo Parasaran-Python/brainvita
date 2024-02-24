@@ -9,6 +9,7 @@ class GameCell extends StatelessWidget {
 
   final void Function(Point, bool) _setValueAt;
   final bool Function(Point) _isPointSelected;
+  final bool Function() _isGameOver;
 
   ValueNotifier<bool>? isFilled;
 
@@ -17,12 +18,14 @@ class GameCell extends StatelessWidget {
       required bool value,
       required Point coordinates,
       required void Function(Point, bool) setValueAt,
-      required bool Function(Point) isPointSelected
+      required bool Function(Point) isPointSelected,
+      required bool Function() isGameOver
     })
         : _value = value,
         _coordinates = coordinates,
         _setValueAt = setValueAt,
-        _isPointSelected = isPointSelected;
+        _isPointSelected = isPointSelected,
+        _isGameOver = isGameOver;
   
   void setValue(bool value) {
     isFilled?.value = value;
@@ -107,6 +110,13 @@ class GameCell extends StatelessWidget {
             details.data,
             false
           );
+
+          if (_isGameOver()) {
+            showDialog(
+              context: context,
+              builder: (context) => const Text('Game Over'),
+            );
+          }
         }
         else if (
           details.data.y == _coordinates.y
@@ -137,6 +147,13 @@ class GameCell extends StatelessWidget {
             details.data,
             false
           );
+
+          if (_isGameOver()) {
+            showDialog(
+              context: context,
+              builder: (context) => const Text('Game Over'),
+            );
+          }
         }
       },
     );
