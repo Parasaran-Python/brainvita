@@ -48,10 +48,10 @@ class GameCell extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(100),
+              borderRadius: BorderRadius.circular(50),
               color: Colors.grey
             ),
           ),
@@ -60,8 +60,8 @@ class GameCell extends StatelessWidget {
             builder: (context, value, child) => Draggable<Point>(
               data: _coordinates,
               feedback: value ? Container(
-                height: 70,
-                width: 70,
+                height: 35,
+                width: 35,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(80),
                   color: Colors.black
@@ -69,8 +69,8 @@ class GameCell extends StatelessWidget {
               ) : Container(),
               childWhenDragging: Container(),
               child: value ? Container(
-                height: 70,
-                width: 70,
+                height: 35,
+                width: 35,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(80),
                   color: Colors.black
