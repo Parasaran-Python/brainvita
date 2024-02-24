@@ -92,7 +92,7 @@ class GameCell extends StatelessWidget {
             && _isPointSelected(
               Point(
                 _coordinates.x,
-                ((details.data.y + _coordinates.y) / 2) as int
+                (details.data.y + _coordinates.y) ~/ 2
               )
             ) == true
             && !_isPointSelected(_coordinates)
@@ -102,7 +102,7 @@ class GameCell extends StatelessWidget {
           _setValueAt(
             Point(
               _coordinates.x,
-              ((details.data.y + _coordinates.y) / 2) as int
+              (details.data.y + _coordinates.y) ~/ 2
             ),
             false
           );
@@ -128,7 +128,7 @@ class GameCell extends StatelessWidget {
             getValue() == false
             && _isPointSelected(
               Point(
-                ((details.data.x + _coordinates.x) / 2) as int,
+                (details.data.x + _coordinates.x) ~/ 2,
                 _coordinates.y
               )
             ) == true
@@ -138,7 +138,7 @@ class GameCell extends StatelessWidget {
           setValue(true);
           _setValueAt(
             Point(
-              ((details.data.x + _coordinates.x) / 2) as int,
+              (details.data.x + _coordinates.x) ~/ 2,
               _coordinates.y
             ),
             false
