@@ -1,16 +1,42 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class GameCell extends StatelessWidget {
   final bool _value;
+  
+  final Point _coordinates;
 
-  GameCell({required value}) : _value = value;
+  final void Function(Point, bool) _setValueAt;
+  final bool Function(Point) _isPointSelected;
+
+  ValueNotifier<bool>? isFilled;
+
+  GameCell(
+    {
+      required bool value,
+      required Point coordinates,
+      required void Function(Point, bool) setValueAt,
+      required bool Function(Point) isPointSelected
+    })
+        : _value = value,
+        _coordinates = coordinates,
+        _setValueAt = setValueAt,
+        _isPointSelected = isPointSelected;
+  
+  void setValue(bool value) {
+    isFilled?.value = value;
+  }
+
+  bool? getValue() {
+    return isFilled?.value;
+  }
 
   @override
   Widget build(BuildContext context) {
-    ValueNotifier<bool> isFilled = ValueNotifier<bool>(_value);
+    isFilled = ValueNotifier<bool>(_value);
 
-    return DragTarget<int>(
+    return DragTarget<Point>(
       builder: (
         BuildContext context,
         List<dynamic> accepted,
@@ -27,9 +53,9 @@ class GameCell extends StatelessWidget {
             ),
           ),
           ValueListenableBuilder(
-            valueListenable: isFilled,
-            builder: (context, value, child) => Draggable<int>(
-              data: 10,
+            valueListenable: isFilled!,
+            builder: (context, value, child) => Draggable<Point>(
+              data: _coordinates,
               feedback: value ? Container(
                 height: 70,
                 width: 70,
@@ -37,7 +63,7 @@ class GameCell extends StatelessWidget {
                   borderRadius: BorderRadius.circular(80),
                   color: Colors.black
                 ),
-              ): Container(),
+              ) : Container(),
               childWhenDragging: Container(),
               child: value ? Container(
                 height: 70,
@@ -51,9 +77,68 @@ class GameCell extends StatelessWidget {
           )
         ]
       ),
-      onAcceptWithDetails: (DragTargetDetails<int> details) {
-        
-      }
+      onAcceptWithDetails: (DragTargetDetails<Point> details) {
+        if (
+          details.data.x == _coordinates.x
+          && (
+            details.data.y == _coordinates.y - 2
+            || details.data.y == _coordinates.y + 2
+          )
+          && (
+            getValue() == false
+            && _isPointSelected(
+              Point(
+                _coordinates.x,
+                ((details.data.y + _coordinates.y) / 2) as int
+              )
+            ) == true
+            && !_isPointSelected(_coordinates)
+          )
+        ) {
+          setValue(true);
+          _setValueAt(
+            Point(
+              _coordinates.x,
+              ((details.data.y + _coordinates.y) / 2) as int
+            ),
+            false
+          );
+          _setValueAt(
+            details.data,
+            false
+          );
+        }
+        else if (
+          details.data.y == _coordinates.y
+          && (
+            details.data.x == _coordinates.x - 2
+            || details.data.x == _coordinates.x + 2
+          )
+          && (
+            getValue() == false
+            && _isPointSelected(
+              Point(
+                ((details.data.x + _coordinates.x) / 2) as int,
+                _coordinates.y
+              )
+            ) == true
+            && !_isPointSelected(_coordinates)
+          )
+        ) {
+          setValue(true);
+          _setValueAt(
+            Point(
+              ((details.data.x + _coordinates.x) / 2) as int,
+              _coordinates.y
+            ),
+            false
+          );
+          _setValueAt(
+            details.data,
+            false
+          );
+        }
+      },
     );
   }
 }
