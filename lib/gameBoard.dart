@@ -52,8 +52,8 @@ class GameBoard extends StatelessWidget {
             )
           ]?.isFilled?.value == true && cellsMap?[
             Point(
-              currPoint.y - 2,
-              currPoint.y
+              currPoint.x,
+              currPoint.y - 2
             )
           ]?.isFilled?.value == false)
 
