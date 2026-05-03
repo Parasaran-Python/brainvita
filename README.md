@@ -1,5 +1,7 @@
 # brainvita
 
+## 🎮 Play now at [brainvita.parasaran.in](https://brainvita.parasaran.in)
+
 A new Flutter project.
 
 ## Getting Started
