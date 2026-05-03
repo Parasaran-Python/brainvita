@@ -31,13 +31,24 @@ class GameCell extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 _hole(hovering),
-                if (isFilled)
-                  Draggable<Point<int>>(
-                    data: coordinates,
-                    feedback: _peg(dragging: true),
-                    childWhenDragging: const SizedBox.shrink(),
-                    child: _peg(),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, anim) => ScaleTransition(
+                    scale: anim,
+                    child: FadeTransition(opacity: anim, child: child),
                   ),
+                  child: isFilled
+                      ? Draggable<Point<int>>(
+                          key: const ValueKey('peg'),
+                          data: coordinates,
+                          feedback: _peg(dragging: true),
+                          childWhenDragging: const SizedBox.shrink(),
+                          child: _peg(),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('empty')),
+                ),
               ],
             ),
           ),
