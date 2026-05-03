@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game_cell.dart';
 
@@ -23,10 +24,57 @@ class _GameBoardState extends State<GameBoard> {
   bool _finished = false;
   final List<_Move> _history = [];
 
+  static const String _kBestMoves = 'brainvita_best_moves';
+  static const String _kBestTimeSec = 'brainvita_best_time_sec';
+  int? _bestMoves;
+  int? _bestTimeSec;
+  bool _newRecordMoves = false;
+  bool _newRecordTime = false;
+
   @override
   void initState() {
     super.initState();
     _resetState();
+    _loadBestStats();
+  }
+
+  Future<void> _loadBestStats() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _bestMoves = prefs.getInt(_kBestMoves);
+        _bestTimeSec = prefs.getInt(_kBestTimeSec);
+      });
+    } catch (_) {
+      // shared_preferences unavailable (e.g. some test envs); ignore.
+    }
+  }
+
+  Future<void> _maybeUpdateBestStats() async {
+    if (!_isPerfectWin()) return;
+    final int moves = _moves;
+    final int seconds = _elapsed.inSeconds;
+    bool newMoves = false;
+    bool newTime = false;
+    if (_bestMoves == null || moves < _bestMoves!) {
+      _bestMoves = moves;
+      newMoves = true;
+    }
+    if (_bestTimeSec == null || seconds < _bestTimeSec!) {
+      _bestTimeSec = seconds;
+      newTime = true;
+    }
+    _newRecordMoves = newMoves;
+    _newRecordTime = newTime;
+    if (!newMoves && !newTime) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (newMoves) await prefs.setInt(_kBestMoves, moves);
+      if (newTime) await prefs.setInt(_kBestTimeSec, seconds);
+    } catch (_) {
+      // ignore persistence failures
+    }
   }
 
   @override
@@ -41,6 +89,8 @@ class _GameBoardState extends State<GameBoard> {
     _elapsed = Duration.zero;
     _started = false;
     _finished = false;
+    _newRecordMoves = false;
+    _newRecordTime = false;
     _history.clear();
     _timer?.cancel();
     _timer = null;
@@ -96,6 +146,7 @@ class _GameBoardState extends State<GameBoard> {
       if (_isGameOver()) {
         _finished = true;
         _timer?.cancel();
+        _maybeUpdateBestStats();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _showEndDialog();
         });
@@ -185,8 +236,32 @@ class _GameBoardState extends State<GameBoard> {
             ),
             const SizedBox(height: 12),
             _statRow('Pegs left', '$remaining'),
-            _statRow('Moves', '$_moves'),
-            _statRow('Time', _formatDuration(_elapsed)),
+            _statRow(
+              'Moves',
+              '$_moves',
+              highlight: perfect && _newRecordMoves,
+            ),
+            _statRow(
+              'Time',
+              _formatDuration(_elapsed),
+              highlight: perfect && _newRecordTime,
+            ),
+            if (perfect && (_newRecordMoves || _newRecordTime)) ...[
+              const SizedBox(height: 8),
+              const Row(
+                children: [
+                  Icon(Icons.star, size: 16, color: Color(0xFFB8651A)),
+                  SizedBox(width: 6),
+                  Text(
+                    'New personal best!',
+                    style: TextStyle(
+                      color: Color(0xFFB8651A),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
         actions: [
@@ -202,16 +277,33 @@ class _GameBoardState extends State<GameBoard> {
     );
   }
 
-  Widget _statRow(String label, String value) {
+  Widget _statRow(String label, String value, {bool highlight = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Color(0xFF4A5568))),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              if (highlight) ...[
+                const Icon(
+                  Icons.arrow_upward,
+                  size: 14,
+                  color: Color(0xFFB8651A),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: highlight
+                      ? const Color(0xFFB8651A)
+                      : const Color(0xFF1A202C),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -237,6 +329,10 @@ class _GameBoardState extends State<GameBoard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _statsBar(),
+                  if (_bestMoves != null || _bestTimeSec != null) ...[
+                    const SizedBox(height: 8),
+                    _bestStatsLine(),
+                  ],
                   const SizedBox(height: 20),
                   _board(),
                   const SizedBox(height: 24),
@@ -355,6 +451,34 @@ class _GameBoardState extends State<GameBoard> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _bestStatsLine() {
+    final parts = <String>[];
+    if (_bestMoves != null) parts.add('${_bestMoves!} moves');
+    if (_bestTimeSec != null) {
+      parts.add(_formatDuration(Duration(seconds: _bestTimeSec!)));
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(
+          Icons.emoji_events,
+          size: 14,
+          color: Color(0xFFB8651A),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          'Best perfect win: ${parts.join(' / ')}',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF718096),
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 
