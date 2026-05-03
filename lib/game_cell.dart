@@ -6,13 +6,19 @@ class GameCell extends StatelessWidget {
   final bool isFilled;
   final Point<int> coordinates;
   final bool Function(Point<int> from, Point<int> to) onMove;
+  final double size;
 
   const GameCell({
     super.key,
     required this.isFilled,
     required this.coordinates,
     required this.onMove,
+    this.size = 60,
   });
+
+  double get _innerSize => size - 8;
+  double get _holeSize => size * 0.63;
+  double get _pegSize => size * 0.6;
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +31,8 @@ class GameCell extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.all(4),
           child: SizedBox(
-            width: 52,
-            height: 52,
+            width: _innerSize,
+            height: _innerSize,
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -60,8 +66,8 @@ class GameCell extends StatelessWidget {
   Widget _hole(bool hovering) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
-      width: 38,
-      height: 38,
+      width: _holeSize,
+      height: _holeSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
@@ -90,8 +96,8 @@ class GameCell extends StatelessWidget {
 
   Widget _peg({bool dragging = false}) {
     return Container(
-      width: 36,
-      height: 36,
+      width: _pegSize,
+      height: _pegSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: const RadialGradient(

@@ -320,29 +320,40 @@ class _GameBoardState extends State<GameBoard> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final double horizontalPadding = constraints.maxWidth < 380 ? 8 : 16;
+        final double verticalPadding = constraints.maxWidth < 380 ? 16 : 24;
+        final double available = (constraints.maxWidth - horizontalPadding * 2)
+            .clamp(0, 520)
+            .toDouble();
+        final double cellSize =
+            ((available - 24) / 7).clamp(36.0, 60.0).toDouble();
+        final bool compact = available < 360;
         return Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            padding: EdgeInsets.symmetric(
+              vertical: verticalPadding,
+              horizontal: horizontalPadding,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _statsBar(),
+                  _statsBar(compact: compact),
                   if (_bestMoves != null || _bestTimeSec != null) ...[
                     const SizedBox(height: 8),
                     _bestStatsLine(),
                   ],
-                  const SizedBox(height: 20),
-                  _board(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: compact ? 14 : 20),
+                  _board(cellSize),
+                  SizedBox(height: compact ? 18 : 24),
                   _actionButtons(),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Jump a peg over its neighbour into an empty hole.',
                     style: TextStyle(
-                      color: Color(0xFF718096),
-                      fontSize: 13,
+                      color: const Color(0xFF718096),
+                      fontSize: compact ? 12 : 13,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -355,9 +366,12 @@ class _GameBoardState extends State<GameBoard> {
     );
   }
 
-  Widget _statsBar() {
+  Widget _statsBar({required bool compact}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 18,
+        vertical: compact ? 10 : 14,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -370,50 +384,57 @@ class _GameBoardState extends State<GameBoard> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _stat(Icons.circle, 'Pegs', '$_remaining'),
-          _stat(Icons.swap_horiz, 'Moves', '$_moves'),
-          _stat(Icons.timer, 'Time', _formatDuration(_elapsed)),
+          Expanded(
+            child: _stat(Icons.circle, 'Pegs', '$_remaining', compact),
+          ),
+          Expanded(
+            child: _stat(Icons.swap_horiz, 'Moves', '$_moves', compact),
+          ),
+          Expanded(
+            child:
+                _stat(Icons.timer, 'Time', _formatDuration(_elapsed), compact),
+          ),
         ],
       ),
     );
   }
 
-  Widget _stat(IconData icon, String label, String value) {
+  Widget _stat(IconData icon, String label, String value, bool compact) {
     return Column(
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: const Color(0xFFB8651A)),
+            Icon(icon, size: compact ? 14 : 16, color: const Color(0xFFB8651A)),
             const SizedBox(width: 6),
             Text(
               label.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: compact ? 10 : 11,
                 letterSpacing: 1.1,
-                color: Color(0xFF718096),
+                color: const Color(0xFF718096),
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: compact ? 2 : 4),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
+          style: TextStyle(
+            fontSize: compact ? 17 : 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1A202C),
-            fontFeatures: [FontFeature.tabularFigures()],
+            color: const Color(0xFF1A202C),
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ],
     );
   }
 
-  Widget _board() {
+  Widget _board(double cellSize) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -444,9 +465,10 @@ class _GameBoardState extends State<GameBoard> {
                       isFilled: _cells[Point<int>(i, j)]!,
                       coordinates: Point<int>(i, j),
                       onMove: _attemptMove,
+                      size: cellSize,
                     )
                   else
-                    const SizedBox(width: 60, height: 60),
+                    SizedBox(width: cellSize, height: cellSize),
               ],
             ),
         ],
@@ -484,8 +506,10 @@ class _GameBoardState extends State<GameBoard> {
 
   Widget _actionButtons() {
     final bool canUndo = _history.isNotEmpty;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      alignment: WrapAlignment.center,
       children: [
         OutlinedButton.icon(
           onPressed: canUndo ? _undo : null,
@@ -508,7 +532,6 @@ class _GameBoardState extends State<GameBoard> {
             ),
           ),
         ),
-        const SizedBox(width: 12),
         ElevatedButton.icon(
           onPressed: _restart,
           icon: const Icon(Icons.refresh),
