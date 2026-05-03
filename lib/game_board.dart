@@ -21,6 +21,7 @@ class _GameBoardState extends State<GameBoard> {
   Timer? _timer;
   bool _started = false;
   bool _finished = false;
+  final List<_Move> _history = [];
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _GameBoardState extends State<GameBoard> {
     _elapsed = Duration.zero;
     _started = false;
     _finished = false;
+    _history.clear();
     _timer?.cancel();
     _timer = null;
   }
@@ -90,6 +92,7 @@ class _GameBoardState extends State<GameBoard> {
       _cells[middle] = false;
       _cells[to] = true;
       _moves++;
+      _history.add(_Move(from: from, middle: middle, to: to));
       if (_isGameOver()) {
         _finished = true;
         _timer?.cancel();
@@ -99,6 +102,26 @@ class _GameBoardState extends State<GameBoard> {
       }
     });
     return true;
+  }
+
+  void _undo() {
+    if (_history.isEmpty) return;
+    setState(() {
+      final move = _history.removeLast();
+      _cells[move.from] = true;
+      _cells[move.middle] = true;
+      _cells[move.to] = false;
+      if (_moves > 0) _moves--;
+      if (_finished) {
+        _finished = false;
+        if (_started && _timer == null) {
+          _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+            if (!mounted) return;
+            setState(() => _elapsed += const Duration(seconds: 1));
+          });
+        }
+      }
+    });
   }
 
   int get _remaining =>
@@ -217,7 +240,7 @@ class _GameBoardState extends State<GameBoard> {
                   const SizedBox(height: 20),
                   _board(),
                   const SizedBox(height: 24),
-                  _restartButton(),
+                  _actionButtons(),
                   const SizedBox(height: 8),
                   const Text(
                     'Jump a peg over its neighbour into an empty hole.',
@@ -335,23 +358,58 @@ class _GameBoardState extends State<GameBoard> {
     );
   }
 
-  Widget _restartButton() {
-    return ElevatedButton.icon(
-      onPressed: _restart,
-      icon: const Icon(Icons.refresh),
-      label: const Text('Restart'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFB8651A),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+  Widget _actionButtons() {
+    final bool canUndo = _history.isNotEmpty;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        OutlinedButton.icon(
+          onPressed: canUndo ? _undo : null,
+          icon: const Icon(Icons.undo),
+          label: const Text('Undo'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF1A202C),
+            side: BorderSide(
+              color: canUndo
+                  ? const Color(0xFFB8651A)
+                  : const Color(0xFFCBD5E0),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        const SizedBox(width: 12),
+        ElevatedButton.icon(
+          onPressed: _restart,
+          icon: const Icon(Icons.refresh),
+          label: const Text('Restart'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFB8651A),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
+}
+
+class _Move {
+  final Point<int> from;
+  final Point<int> middle;
+  final Point<int> to;
+  const _Move({required this.from, required this.middle, required this.to});
 }
